@@ -1,7 +1,6 @@
 import json
 
-with open("lab4\\sample-data.json", "r") as file:
-    data = json.load(file)
+data = json.load(open("lab4\\sample-data.json", "r"))
 
 interfaces = data.get("imdata")
 
