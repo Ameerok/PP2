@@ -11,4 +11,4 @@ for item in interfaces:
     speed = attributes.get("speed", "inherit")
     mtu = attributes.get("mtu", "9150")
 
-    print(f"{dn:<50} {description:<20} {speed:<7} {mtu:<6}")
+    print(f"{dn} {description} {speed} {mtu}")
