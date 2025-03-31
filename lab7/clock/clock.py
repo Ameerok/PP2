@@ -1,6 +1,5 @@
 import pygame
 import datetime
-import math
 
 pygame.init()
 
@@ -10,13 +9,13 @@ screen = pygame.display.set_mode((width, height))
 
 running = True
 
-background = pygame.image.load("lab7\\bg_clock.jpg")
+background = pygame.image.load("lab7\\clock\\bg_clock.jpg")
 background = pygame.transform.scale(background, (width, height))
 
-min_hand = pygame.image.load("lab7\\right_hand.png")
+min_hand = pygame.image.load("lab7\\clock\\right_hand.png")
 min_hand = pygame.transform.scale(min_hand, (150,150))
 
-sec_hand = pygame.image.load("lab7\\left_hand.png")
+sec_hand = pygame.image.load("lab7\\clock\\left_hand.png")
 sec_hand = pygame.transform.scale(sec_hand, (200,200))
 
 center_x = width // 2
