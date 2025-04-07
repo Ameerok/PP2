@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import time
 
 pygame.init()
 
@@ -11,6 +12,7 @@ CELL_SIZE = 10
 SPEED = 5
 SCORE = 0
 LEVEL = 1
+MAX_FOOD = 5
 
 #Создание экрана
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -23,40 +25,9 @@ def draw_snake(snake):
     for cell in snake:
         pygame.draw.rect(screen, 'dark green', pygame.Rect(cell[0], cell[1], CELL_SIZE, CELL_SIZE))
 
-def draw_food(position):
-    pygame.draw.rect(screen, 'red', pygame.Rect(position[0], position[1], CELL_SIZE, CELL_SIZE))
-
-#Рестарт кнопка
-class Button:
-    def __init__(self, x, y, width, height, text, action=None):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.text = text
-        self.action = action
-
-    def draw(self):
-        pygame.draw.rect(screen, 'lightblue', (self.x, self.y, self.width, self.height))
-        text_surface = font.render(self.text, True, 'black')
-        screen.blit(text_surface, (self.x + (self.width - text_surface.get_width()) // 2, self.y + (self.height - text_surface.get_height()) // 2))
-
-    def check_click(self):
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        if pygame.mouse.get_pressed()[0]:  #Клик
-            if self.x <= mouse_x <= self.x + self.width and self.y <= mouse_y <= self.y + self.height:
-                if self.action:
-                    self.action() 
-
-#Ресет
-def reset_game():
-    global snake, direction, food, score, level, speed
-    snake = [(100, 100), (80, 100), (60, 100)]
-    direction = (CELL_SIZE, 0)
-    food = spawn_food(snake)
-    score = 0
-    level = 1
-    speed = 10
+def draw_food(food_list):
+    for food in food_list:
+        pygame.draw.rect(screen, 'red', pygame.Rect(food['position'][0], food['position'][1], food['size'], food['size']))
 
 def spawn_food(snake_body): #Ищем свободную от змейки клетку
     all_cells = [
@@ -74,9 +45,10 @@ def show_score(score, level):
 
 #Настройки
 snake = [(100, 100), (80, 100), (60, 100)]
+food_list = []
 direction = (CELL_SIZE, 0)
 food = spawn_food(snake)
-restart_button = Button(WIDTH//2 - 75, HEIGHT//2 - 25, 150, 50, "Restart", reset_game)
+food_timer = time.time()
 
 
 #Разрешаем ходить
@@ -99,19 +71,34 @@ while True:
             elif event.key == pygame.K_RIGHT and direction != (-CELL_SIZE, 0):
                 next_direction = (CELL_SIZE, 0)
 
+    if((len(food_list) < MAX_FOOD) and (time.time() - food_timer >= random.randint(2,6))):
+        food_position = spawn_food(snake)
+        food_points = random.randint(1,3)
+        food_size = food_points * 5
+        food_lifetime = time.time() + random.randint(5, 10)
+        food_list.append({
+            'position': food_position,
+            'size': food_size,
+            'points': food_points,
+            'lifetime': food_lifetime
+        })
+        food_timer = time.time()
+    
+    food_list = [food for food in food_list if food['lifetime'] > time.time()]
+    
     #Движение змейки
     head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
     snake.insert(0, head)
-
+    food_eaten = False
     #Сбор очков
-    if head == food:
-        food = (random.randint(0, (WIDTH - CELL_SIZE) // CELL_SIZE) * CELL_SIZE,
-                random.randint(0, (HEIGHT - CELL_SIZE) // CELL_SIZE) * CELL_SIZE)
-        SCORE += 1
-    else:
+    for food in food_list[:]:
+        if head == food['position']:
+            SCORE += food['points']
+            food_list.remove(food)
+            food_eaten = True
+    if not food_eaten:
         snake.pop()
-
-    if SCORE >= 2 * (LEVEL+1):
+    if SCORE >= 5 * LEVEL:
         LEVEL += 1
         SPEED = int(SPEED + LEVEL * 1.5)  #Увеличиваем скорость при новом уровне
 
@@ -121,13 +108,19 @@ while True:
         screen.fill('red')
         game_over = font.render('GAME OVER!', True, 'black')
         screen.blit(game_over, (WIDTH//2-100, HEIGHT//2))
-        restart_button.draw()
-        restart_button.check_click()
-        
+        pygame.display.flip()
+        pygame.time.delay(2000)
+        snake = [(100, 100), (80, 100), (60, 100)] 
+        direction = (CELL_SIZE, 0) 
+        next_direction = direction
+        food_list = []
+        LEVEL = 1
+        SCORE = 0
+        SPEED = 5
     
     screen.fill('white')
     draw_snake(snake)
-    draw_food(food)    
+    draw_food(food_list)    
     show_score(SCORE, LEVEL)
 
     direction = next_direction #Я гений

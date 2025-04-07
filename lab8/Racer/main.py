@@ -8,8 +8,10 @@ WIDTH = 400
 HEIGHT = 600
 SPEED = 5
 SCORE = 0
-COINS = 0 #Обнуляем счетчик монет
+COINS = 0 
+CURRENT_COINS = 0
 LIVES = 3
+LEVEL = 1
 
 font = pygame.font.SysFont(None, 60)
 font_small = pygame.font.SysFont(None, 20)
@@ -63,12 +65,16 @@ class Player(pygame.sprite.Sprite):
 class Coin(pygame.sprite.Sprite): #Класс для монетки
     def __init__(self): #Задаём характеристики монетке: цвет, тип, создаем рект монетки
         super().__init__()
-        self.image = pygame.Surface((20,20))
-        pygame.draw.circle(self.image, 'yellow', (10,10), 10)
-        self.rect = self.image.get_rect()
+        self.image = None
+        self.rect = None
         self.spawn(P1)
     def spawn(self, player):
         while True:
+            global size 
+            size = random.randint(1, 3)
+            self.image = pygame.Surface((10*size,10*size), pygame.SRCALPHA)
+            pygame.draw.circle(self.image, 'yellow', (10*size//2,10*size//2), 10*size//2)
+            self.rect = self.image.get_rect()
             self.rect.center = (random.randint(20, WIDTH - self.rect.width), random.randint(20, HEIGHT - self.rect.height)) #Спавним монетку в случайном месте экрана
             if not self.rect.colliderect(player.rect): #Проверяем чтобы монетка не появилась на месте игрока (мгновенный сбор монет)
                 break
@@ -86,17 +92,11 @@ all_sprites.add(P1)
 all_sprites.add(E1)
 all_sprites.add(coin)
 
-INC_SPEED = pygame.USEREVENT + 1
-pygame.time.set_timer(INC_SPEED, 1000)
-
-while True:      
+while True:
     for event in pygame.event.get():
-        if event.type == INC_SPEED:
-              SPEED += 0.5      
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-
 
     screen.blit(background, (0,0))
     scores = font_small.render(str(SCORE), True, 'black')
@@ -108,7 +108,11 @@ while True:
     for entity in all_sprites:
         entity.move()
         screen.blit(entity.image, entity.rect)
-        
+    
+    if(CURRENT_COINS >= LEVEL * 1.5):
+        SPEED += 1
+        LEVEL += 1
+
     if pygame.sprite.spritecollideany(P1, enemies):
         if LIVES == 1: #Если осталась 1 жизнь то заканчиваем игру при столкновении
             pygame.mixer.Sound('crash.wav').play()
@@ -128,10 +132,14 @@ while True:
             P1.rect.center = (160, 520)
             LIVES -= 1
             SPEED = 5
+            LEVEL = 1
+            CURRENT_COINS = 0
+
 
     if P1.rect.colliderect(coin.rect): #Проверяем если игрок собрал монетку
-        COINS += 1 #Увеличиваем счётчик на 1 монету
+        COINS += size #Увеличиваем счётчик на 1 монету
+        CURRENT_COINS += 1
         coin.spawn(P1) #Спавним новую монету
-
+    
     pygame.display.update()
     pygame.time.Clock().tick(60)
